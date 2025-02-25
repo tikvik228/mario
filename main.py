@@ -31,6 +31,18 @@ def main(num):
 
     tile_width = tile_height = 50
 
+    class Camera:
+        def __init__(self):
+            self.dx = 0
+            self.dy = 0
+
+        def apply(self, obj):
+            return obj.rect.move(self.dx, self.dy)
+
+        def update(self, target):
+            self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
+            self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
+
     class ScreenFrame(pygame.sprite.Sprite):
         def __init__(self):
             super().__init__()
@@ -150,18 +162,19 @@ def main(num):
             if y > 0 and level_map[y - 1][x] == ".":
                 hero.move(x, y - 1)
         if movement == "down":
-            if y < max_y - 1 and level_map[y + 1][x] == ".":
+            if y <= max_y - 1 and level_map[y + 1][x] == ".":
                 hero.move(x, y + 1)
         if movement == "left":
             if x > 0 and level_map[y][x - 1] == ".":
                 hero.move(x - 1, y)
         if movement == "right":
-            if x < max_x - 1 and level_map[y][x + 1] == ".":
+            if x <= max_x - 1 and level_map[y][x + 1] == ".":
                 hero.move(x + 1, y)
 
 
     start_screen()
     level_map = load_level(f"map{num}.txt")
+    camera = Camera()
     hero, max_x, max_y = generate_level(level_map)
     while running:
         for event in pygame.event.get():
@@ -177,8 +190,11 @@ def main(num):
                 elif event.key == pygame.K_RIGHT:
                     move(hero, "right")
         screen.fill(pygame.Color("black"))
-        sprite_group.draw(screen)
-        hero_group.draw(screen)
+        camera.update(hero)
+        for field in sprite_group:
+            screen.blit(field.image, camera.apply(field))
+        for h in hero_group:
+            screen.blit(h.image, camera.apply(h))
         clock.tick(FPS)
         pygame.display.flip()
     pygame.quit()
